@@ -66,6 +66,11 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+    type: String,
+    enum: ['PENDING', 'APPROVED', 'REJECTED'],
+    default: 'PENDING'
+  },
     // We use a single profile object but the controller will ensure
     // only relevant fields for the specific role are populated.
     profile: {

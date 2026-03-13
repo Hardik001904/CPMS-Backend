@@ -148,6 +148,8 @@ const login = async (req, res) => {
       });
     }
 
+    
+
     // 3 Find user by email
     const user = await User.findOne({ email });
 
@@ -164,11 +166,22 @@ const login = async (req, res) => {
       });
     }
 
+    if (user.status === "PENDING") {
+      return res
+        .status(403)
+        .json({ message: "Your account is awaiting administrator approval." });
+    }
+
+    if (user.status === "REJECTED") {
+      return res
+        .status(403)
+        .json({ message: "Your application was rejected by admin." });
+    }
+
+
     // 5 Check approval
-    if (!user.isApproved) {
-      return res.status(403).json({
-        message: "Your account is awaiting administrator approval.",
-      });
+    if (user.status !== 'APPROVED') {
+      return res.status(403).json({ message: 'Account access restricted.' });
     }
 
     // 6 Check password
@@ -179,7 +192,7 @@ const login = async (req, res) => {
         message: "Incorrect password.",
       });
     }
-    // console.log("my name", user.name);
+   
 
     // 7 Generate token
     const token = jwt.sign(
@@ -195,6 +208,7 @@ const login = async (req, res) => {
     // 8 Remove password before sending
     const userData = user.toObject();
     delete userData.password;
+
 
     return res.status(200).json({
       message: "Login successful",
@@ -216,7 +230,7 @@ const getUser = async (req, res) => {
     res.status(200).json({
       count: users.length,
       users,
-      message:"user found"
+      message: "user found",
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
