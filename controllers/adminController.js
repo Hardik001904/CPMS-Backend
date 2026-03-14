@@ -129,12 +129,57 @@ const getAllStudents = async (req, res) => {
   }
 };
 
+const getStudentById = async (req, res) => {
+  try {
+    const student = await User.findById(req.params.id).select("-password");
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    res.json(student);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const getAllCompanies = async (req, res) => {
   try {
     const list = await User.find({ role: "COMPANY", isApproved: true }).select(
       "-password",
     );
     res.json(list);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getAdminDashboard = async (req, res) => {
+  try {
+    const company = await User.countDocuments({
+      role: "COMPANY",
+      status: "APPROVED",
+    }).select("-password");
+
+    const student = await User.countDocuments({
+      role: "STUDENT",
+      status: "APPROVED",
+    }).select("-password");
+
+    const pending = await User.countDocuments({
+      role: "COMPANY",
+      status: "PENDING",
+    }).select("-password");
+
+    const job = await Job.countDocuments();
+
+    res.json({
+      company,
+      student,
+      job,
+      pending,
+      message: "Admin Overview",
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -150,4 +195,6 @@ module.exports = {
   getSystemStats,
   getAllStudents,
   getAllCompanies,
+  getStudentById,
+  getAdminDashboard,
 };

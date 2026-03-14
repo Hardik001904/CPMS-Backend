@@ -68,7 +68,8 @@ const studentRegister = async (req, res) => {
       email,
       password: hashedPassword,
       role: "STUDENT",
-      isApproved: COLLEGE_CONFIG.autoApproveStudents,
+      // isApproved: COLLEGE_CONFIG.autoApproveStudents,
+      status: "APPROVED",
       profile: {
         department,
         enrollmentNumber,
@@ -107,7 +108,7 @@ const companyRegister = async (req, res) => {
       email,
       password: hashedPassword,
       role: "COMPANY",
-      isApproved: false, // Must be approved by Admin
+      status: "PENDING", // Must be approved by Admin
       profile: {
         hrName,
         industry,
