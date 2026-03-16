@@ -120,9 +120,10 @@ const getSystemStats = async (req, res) => {
 //Directory lists
 const getAllStudents = async (req, res) => {
   try {
-    const list = await User.find({ role: "STUDENT", isApproved: true }).select(
-      "-password",
-    );
+    const list = await User.find({
+      role: "STUDENT",
+      status: "APPROVED",
+    }).select("-password");
     res.json(list);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -143,11 +144,40 @@ const getStudentById = async (req, res) => {
   }
 };
 
+// const getAllCompanies = async (req, res) => {
+//   try {
+//     const list = await User.find({ role: "COMPANY", isApproved: true }).select(
+//       "-password",
+//     );
+//     res.json(list);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 const getAllCompanies = async (req, res) => {
   try {
-    const list = await User.find({ role: "COMPANY", isApproved: true }).select(
-      "-password",
-    );
+    const { search, industry } = req.query;
+
+    let query = {
+      role: "COMPANY",
+      status: "APPROVED",
+    };
+
+    // Search by company name
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    // Filter by industry
+    if (industry && industry !== "All") {
+      query["profile.industry"] = industry;
+    }
+
+    const list = await User.find(query).select("-password").sort({
+      createdAt: -1,
+    });
+
     res.json(list);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -185,6 +215,59 @@ const getAdminDashboard = async (req, res) => {
   }
 };
 
+// Master Student List Management
+const getMasterStudent = async (req, res) => {
+  try {
+    const students = await CollageStudent.find().sort({ name: 1 });
+    res.json("students");
+  } catch (error) {
+    res.status(500).json({ message: "error.message" });
+  }
+};
+
+const addMasterStudent = async (req, res) => {
+  try {
+    const { name, enrollmentNumber, department } = req.body;
+    if (!enrollmentNumber || !name || !department) {
+      res.status(400).json({
+        message: "Enrollment number, name and department are required",
+      });
+    }
+
+    //check for duplicate
+    const existing = await CollageStudent.findOne({ enrollmentNumber });
+    if (!existing) {
+      res.status(400).json({
+        message:
+          "Student with this enrollment number already exist in the master list ",
+      });
+    }
+
+    const newStudent = new CollageStudent({
+      name,
+      enrollmentNumber,
+      department,
+    });
+    await newStudent.save();
+    res.status(201).json({ newStudent });
+  } catch (error) {
+    res.status(400).json({ message: "error.message" });
+  }
+};
+
+const deleteMasterStudent = async (req, res) => {
+  try {
+    await CollageStudent.findByIdAndDelete(req.params.id);
+    res.status(201).json({
+      success: true,
+      message: "Student added to master list",
+      student,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getPendingApprovals,
   approveUser,
@@ -197,4 +280,7 @@ module.exports = {
   getAllCompanies,
   getStudentById,
   getAdminDashboard,
+  getMasterStudent,
+  addMasterStudent,
+  deleteMasterStudent,
 };
