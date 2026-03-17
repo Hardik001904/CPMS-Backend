@@ -1,23 +1,24 @@
 const express = require("express");
 const { getPendingApprovals, approveUser, rejectUser, getSystemStats, getAllStudents, getAllCompanies, getBinUsers, restoreUser, deletePermanently, getStudentById, getAdminDashboard, getMasterStudent, addMasterStudent, deleteMasterStudent } = require("../controllers/adminController");
+const { authMiddleware, roleCheck } = require("../middleware/auth");
 const router = express.Router();
 
-router.get("/approvals", getPendingApprovals);
-router.patch("/approve/:id", approveUser);
-router.patch("/reject/:id", rejectUser);
-router.get("/bin", getBinUsers);
-router.patch("/restore/:id", restoreUser);
-router.delete("/delete/:id", deletePermanently);
-router.get("/stats", getSystemStats);
-router.get("/students", getAllStudents);
-router.get("/students/:id", getStudentById);
-router.get("/companies", getAllCompanies);
-router.get("/overview", getAdminDashboard);
+router.get("/approvals",  authMiddleware, roleCheck(["ADMIN"]) , getPendingApprovals);
+router.patch("/approve/:id",  authMiddleware, roleCheck(["ADMIN"]) , approveUser);
+router.patch("/reject/:id",  authMiddleware, roleCheck(["ADMIN"]) , rejectUser);
+router.get("/bin",  authMiddleware, roleCheck(["ADMIN"]) , getBinUsers);
+router.patch("/restore/:id",  authMiddleware, roleCheck(["ADMIN"]) , restoreUser);
+router.delete("/delete/:id",  authMiddleware, roleCheck(["ADMIN"]) , deletePermanently);
+router.get("/stats",  authMiddleware, roleCheck(["ADMIN"]) , getSystemStats);
+router.get("/students",  authMiddleware, roleCheck(["ADMIN"]) , getAllStudents);
+router.get("/students/:id",  authMiddleware, roleCheck(["ADMIN"]) , getStudentById);
+router.get("/companies",  authMiddleware, roleCheck(["ADMIN"]) , getAllCompanies);
+router.get("/overview",  authMiddleware, roleCheck(["ADMIN"]) , getAdminDashboard);
 
 
 //Master students list 
-router.get("/students/master", getMasterStudent);
-router.post("/students/master", addMasterStudent);
-router.delete("/students/master/:id", deleteMasterStudent);
+router.get("/students/master",  authMiddleware, roleCheck(["ADMIN"]) , getMasterStudent);
+router.post("/students/master",  authMiddleware, roleCheck(["ADMIN"]) , addMasterStudent);
+router.delete("/students/master/:id",  authMiddleware, roleCheck(["ADMIN"]) , deleteMasterStudent); 
 
 module.exports = router;
