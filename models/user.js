@@ -22,10 +22,19 @@ const UserSchema = new mongoose.Schema(
       type: String,
       enum: ["STUDENT", "COMPANY", "ADMIN"],
     },
-    // isApproved: {
-    //   type: Boolean,
-    //   default: false,
-    // },
+    sessions: [
+      {
+        token: String,
+        device: String,
+        browser: String,
+        ip: String,
+        lastActive: Date,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     status: {
       type: String,
       enum: ["PENDING", "APPROVED", "REJECTED"],

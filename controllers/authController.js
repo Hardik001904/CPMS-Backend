@@ -3,6 +3,7 @@ const User = require("../models/user");
 const CollegeStudent = require("../models/collegeStudent.js"); // Import the master list
 
 const bcrypt = require("bcrypt");
+const useragent = require("useragent");
 // Define your college configuration
 const COLLEGE_CONFIG = {
   emailDomain: "university.edu", // Only allow @university.edu
@@ -133,6 +134,7 @@ const companyRegister = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
+    console.log("login");
 
     // 1 Required fields check
     if (!email || !password || !role) {
@@ -148,8 +150,6 @@ const login = async (req, res) => {
         message: "Invalid role selected.",
       });
     }
-
-    
 
     // 3 Find user by email
     const user = await User.findOne({ email });
@@ -179,10 +179,9 @@ const login = async (req, res) => {
         .json({ message: "Your application was rejected by admin." });
     }
 
-
     // 5 Check approval
-    if (user.status !== 'APPROVED') {
-      return res.status(403).json({ message: 'Account access restricted.' });
+    if (user.status !== "APPROVED") {
+      return res.status(403).json({ message: "Account access restricted." });
     }
 
     // 6 Check password
@@ -193,7 +192,6 @@ const login = async (req, res) => {
         message: "Incorrect password.",
       });
     }
-   
 
     // 7 Generate token
     const token = jwt.sign(
@@ -210,17 +208,112 @@ const login = async (req, res) => {
     const userData = user.toObject();
     delete userData.password;
 
+    // 📱 Device detection
+    const agent = useragent.parse(req.headers["user-agent"]);
+
+    const deviceInfo = {
+      token,
+      device: agent.device.toString(), // mobile / desktop
+      browser: agent.toAgent(),
+      ip: req.ip,
+      lastActive: new Date(),
+    };
+    // console.log("deviceInfo : ",deviceInfo);
+
+    // 🔄 Replace old sessions (single login)
+    user.sessions = [deviceInfo];
+
+    await user.save();
 
     return res.status(200).json({
       message: "Login successful",
       token,
       user: userData,
+      sessions: user.sessions,
     });
   } catch (error) {
     return res.status(500).json({
       message: "Server error",
       error: error.message,
     });
+  }
+};
+
+// Active Sessions:
+// - Chrome on Windows (Ahmedabad) 🟢
+// - Mobile Chrome (Android) 🔴
+const getMySessions = async (req, res) => {
+  const user = await User.findById(req.user.id);
+
+  // res.json(user.sessions);
+  res.json(
+    user.sessions.map((s) => ({
+      device: s.device,
+      browser: s.browser,
+      ip: s.ip,
+      lastActive: s.lastActive,
+    })),
+  );
+};
+
+// API: Logout Specific Session
+const logoutSingleSession = async (req, res) => {
+  try {
+    const { userId, token } = req.body;
+
+    const user = await User.findById(userId);
+
+    user.sessions = user.sessions.filter((s) => s.token !== token);
+
+    await user.save();
+
+    res.json({
+      message: "Session removed",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// API: Logout User Completely
+const forceLogoutUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    await User.findByIdAndUpdate(userId, {
+      sessions: [],
+    });
+
+    res.json({
+      message: "User logged out from all devices",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const ping = async (req, res) => {
+  try {
+    console.log("ping");
+
+    const user = await User.findById(req.user.id);
+
+    const token = req.headers.authorization.split(" ")[1];
+
+    const session = user.sessions.find((s) => s.token === token);
+
+    if (!session) {
+      return res.status(401).json({ message: "Session not found" });
+    }
+
+    // ✅ update last active time
+    session.lastActive = new Date();
+
+    await user.save();
+
+    res.json({ message: "Session active" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -332,4 +425,8 @@ module.exports = {
   updateMyProfile,
   deleteUser,
   getUserById,
+  getMySessions,
+  forceLogoutUser,
+  logoutSingleSession,
+  ping,
 };

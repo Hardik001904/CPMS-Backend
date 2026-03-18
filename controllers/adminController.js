@@ -1,6 +1,7 @@
 const Application = require("../models/application");
 const Job = require("../models/job");
 const User = require("../models/user");
+const CollageStudent = require("../models/collegeStudent");
 
 //Get users awaiting verification
 const getPendingApprovals = async (req, res) => {
@@ -217,29 +218,44 @@ const getAdminDashboard = async (req, res) => {
 
 // Master Student List Management
 const getMasterStudent = async (req, res) => {
+  
   try {
+    console.log("getMasterStudent");
     const students = await CollageStudent.find().sort({ name: 1 });
-    res.json("students");
+    console.log(students);
+    res.json({message:"getMasterStudent",students});
   } catch (error) {
-    res.status(500).json({ message: "error.message" });
+    console.error(error);
+    res.status(500).json({ message: error.message });
   }
 };
 
 const addMasterStudent = async (req, res) => {
   try {
-    const { name, enrollmentNumber, department } = req.body;
+    // const { name, enrollmentNumber, department } = req.body;
+    const name = req.body.name.trim();
+    const enrollmentNumber = req.body.enrollmentNumber.trim();
+    const department = req.body.department.trim();
     if (!enrollmentNumber || !name || !department) {
-      res.status(400).json({
+      return res.status(400).json({
         message: "Enrollment number, name and department are required",
       });
     }
 
     //check for duplicate
+    // const existing = await CollageStudent.findOne({ enrollmentNumber });
+    // if (!existing) {
+    //   res.status(400).json({
+    //     message:
+    //       "Student with this enrollment number already exist in the master list ",
+    //   });
+    // }
+
     const existing = await CollageStudent.findOne({ enrollmentNumber });
-    if (!existing) {
-      res.status(400).json({
-        message:
-          "Student with this enrollment number already exist in the master list ",
+
+    if (existing) {
+      return res.status(400).json({
+        message: "Student with this enrollment number already exists",
       });
     }
 
@@ -251,17 +267,18 @@ const addMasterStudent = async (req, res) => {
     await newStudent.save();
     res.status(201).json({ newStudent });
   } catch (error) {
-    res.status(400).json({ message: "error.message" });
+    console.error(error);
+    res.status(400).json({ message: error.message });
   }
 };
 
 const deleteMasterStudent = async (req, res) => {
   try {
     await CollageStudent.findByIdAndDelete(req.params.id);
-    res.status(201).json({
+    res.status(200).json({
       success: true,
-      message: "Student added to master list",
-      student,
+      message: "Student deleted successfully",
+      // student,
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

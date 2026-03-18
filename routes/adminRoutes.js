@@ -17,8 +17,8 @@ router.get("/overview",  authMiddleware, roleCheck(["ADMIN"]) , getAdminDashboar
 
 
 //Master students list 
-router.get("/students/master",  authMiddleware, roleCheck(["ADMIN"]) , getMasterStudent);
-router.post("/students/master",  authMiddleware, roleCheck(["ADMIN"]) , addMasterStudent);
-router.delete("/students/master/:id",  authMiddleware, roleCheck(["ADMIN"]) , deleteMasterStudent); 
+router.get("/master",  authMiddleware , roleCheck(["ADMIN"]), getMasterStudent);
+router.post("/master",  authMiddleware, roleCheck(["ADMIN"]) , addMasterStudent);
+router.delete("/master/:id",  authMiddleware, roleCheck(["ADMIN"]) , deleteMasterStudent); 
 
 module.exports = router;

@@ -29,7 +29,7 @@ app.use(cors({
 }));
 
 // app.use(cors({
-//   origin: "https://cpms-delta.vercel.app",
+//   origin: "https://cpms-job.vercel.app",
 //   credentials: true,
 // }));
 
