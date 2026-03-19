@@ -208,7 +208,7 @@ const login = async (req, res) => {
     const userData = user.toObject();
     delete userData.password;
 
-    // 📱 Device detection
+    //  Device detection
     const agent = useragent.parse(req.headers["user-agent"]);
 
     const deviceInfo = {
@@ -220,7 +220,7 @@ const login = async (req, res) => {
     };
     // console.log("deviceInfo : ",deviceInfo);
 
-    // 🔄 Replace old sessions (single login)
+    // Replace old sessions (single login)
     user.sessions = [deviceInfo];
 
     await user.save();
@@ -240,8 +240,8 @@ const login = async (req, res) => {
 };
 
 // Active Sessions:
-// - Chrome on Windows (Ahmedabad) 🟢
-// - Mobile Chrome (Android) 🔴
+// - Chrome on Windows (Ahmedabad) 
+// - Mobile Chrome (Android) 
 const getMySessions = async (req, res) => {
   const user = await User.findById(req.user.id);
 
@@ -306,7 +306,7 @@ const ping = async (req, res) => {
       return res.status(401).json({ message: "Session not found" });
     }
 
-    // ✅ update last active time
+    //  update last active time
     session.lastActive = new Date();
 
     await user.save();
