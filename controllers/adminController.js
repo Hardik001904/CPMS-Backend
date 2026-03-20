@@ -6,7 +6,6 @@ const CollageStudent = require("../models/collegeStudent");
 //Get users awaiting verification
 const getPendingApprovals = async (req, res) => {
   try {
-    // const pending = await User.find({ isApproved: false }).select("-password");
     const pending = await User.find({ status: "PENDING" }).select("-password");
     res.json(pending);
   } catch (error) {
@@ -28,16 +27,6 @@ const approveUser = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
-
-// // Reject / Delete user
-// const rejectUser = async (req, res) => {
-//   try {
-//     await User.findByIdAndDelete(req.params.id);
-//     res.json({ message: "Account request rejected and purged" });
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
 
 // Reject user (Move to Bin)
 const rejectUser = async (req, res) => {
@@ -145,17 +134,6 @@ const getStudentById = async (req, res) => {
   }
 };
 
-// const getAllCompanies = async (req, res) => {
-//   try {
-//     const list = await User.find({ role: "COMPANY", isApproved: true }).select(
-//       "-password",
-//     );
-//     res.json(list);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
 const getAllCompanies = async (req, res) => {
   try {
     const { search, industry } = req.query;
@@ -220,9 +198,9 @@ const getAdminDashboard = async (req, res) => {
 const getMasterStudent = async (req, res) => {
   
   try {
-    console.log("getMasterStudent");
+    // console.log("getMasterStudent");
     const students = await CollageStudent.find().sort({ name: 1 });
-    console.log(students);
+    // console.log(students);
     res.json({message:"getMasterStudent",students});
   } catch (error) {
     console.error(error);
@@ -241,15 +219,6 @@ const addMasterStudent = async (req, res) => {
         message: "Enrollment number, name and department are required",
       });
     }
-
-    //check for duplicate
-    // const existing = await CollageStudent.findOne({ enrollmentNumber });
-    // if (!existing) {
-    //   res.status(400).json({
-    //     message:
-    //       "Student with this enrollment number already exist in the master list ",
-    //   });
-    // }
 
     const existing = await CollageStudent.findOne({ enrollmentNumber });
 
@@ -278,7 +247,7 @@ const deleteMasterStudent = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Student deleted successfully",
-      // student,
+     
     });
   } catch (error) {
     res.status(400).json({ message: error.message });

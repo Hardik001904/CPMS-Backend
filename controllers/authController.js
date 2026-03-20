@@ -134,7 +134,6 @@ const companyRegister = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
-    console.log("login");
 
     // 1 Required fields check
     if (!email || !password || !role) {
@@ -218,7 +217,7 @@ const login = async (req, res) => {
       ip: req.ip,
       lastActive: new Date(),
     };
-    // console.log("deviceInfo : ",deviceInfo);
+   
 
     // Replace old sessions (single login)
     user.sessions = [deviceInfo];
@@ -244,8 +243,6 @@ const login = async (req, res) => {
 // - Mobile Chrome (Android) 
 const getMySessions = async (req, res) => {
   const user = await User.findById(req.user.id);
-
-  // res.json(user.sessions);
   res.json(
     user.sessions.map((s) => ({
       device: s.device,
@@ -260,13 +257,9 @@ const getMySessions = async (req, res) => {
 const logoutSingleSession = async (req, res) => {
   try {
     const { userId, token } = req.body;
-
     const user = await User.findById(userId);
-
     user.sessions = user.sessions.filter((s) => s.token !== token);
-
     await user.save();
-
     res.json({
       message: "Session removed",
     });
@@ -279,11 +272,9 @@ const logoutSingleSession = async (req, res) => {
 const forceLogoutUser = async (req, res) => {
   try {
     const { userId } = req.params;
-
     await User.findByIdAndUpdate(userId, {
       sessions: [],
     });
-
     res.json({
       message: "User logged out from all devices",
     });
@@ -294,23 +285,16 @@ const forceLogoutUser = async (req, res) => {
 
 const ping = async (req, res) => {
   try {
-    console.log("ping");
-
     const user = await User.findById(req.user.id);
-
     const token = req.headers.authorization.split(" ")[1];
-
     const session = user.sessions.find((s) => s.token === token);
-
     if (!session) {
       return res.status(401).json({ message: "Session not found" });
     }
 
     //  update last active time
     session.lastActive = new Date();
-
     await user.save();
-
     res.json({ message: "Session active" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -320,7 +304,6 @@ const ping = async (req, res) => {
 const getUser = async (req, res) => {
   try {
     const users = await User.find().select("-password");
-
     res.status(200).json({
       count: users.length,
       users,
@@ -333,11 +316,7 @@ const getUser = async (req, res) => {
 
 const getUserById = async (req, res) => {
   try {
-    // const { id } = req.params;
-    // console.log("getUserById");
     const id = req.user.id;
-    // console.log("res id :", id);
-
     const user = await User.findById(id).select("-password");
 
     if (!user) {
@@ -352,11 +331,8 @@ const getUserById = async (req, res) => {
 
 const updateMyProfile = async (req, res) => {
   try {
-    // const userId = req.user.id;
     const userId = req.params.id;
-    // console.log("inside update");
-    // console.log(userId);
-
+    
     // Only allowed fields
     const allowedUpdates = ["name", "password", "profile"];
     const updates = {};
@@ -399,15 +375,11 @@ const updateMyProfile = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-
     const user = await User.findById(id);
-
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
     await User.findByIdAndDelete(id);
-
     res.status(200).json({
       success: true,
       message: "User deleted successfully",

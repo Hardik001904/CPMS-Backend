@@ -4,9 +4,9 @@ const { postJob, getAllJobs, updateJobStatus, getMyJobs } = require("../controll
 const router = express.Router();
 
 // router.post("/create",authMiddleware, postJob);
-router.post("/create", authMiddleware, roleCheck(["COMPANY"]), postJob);
 router.get("/", authMiddleware, getAllJobs);
 router.get("/company", authMiddleware, roleCheck(["COMPANY"]), getMyJobs);
+router.post("/create", authMiddleware, roleCheck(["COMPANY"]), postJob);
 router.patch("/:id/status", authMiddleware, roleCheck(["COMPANY"]), updateJobStatus);
 
 

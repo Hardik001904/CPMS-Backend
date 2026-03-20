@@ -16,7 +16,6 @@ const getAllJobs = async (req, res) => {
 //Company: Get only jobs posted by this comFany
 const getMyJobs = async (req, res) => {
   try {
-    // console.log("getMyJobs",req.user.id)
     const jobs = await Job.find({ companyId: req.user.id }).sort({
       postedDate: -1,
     });
@@ -71,7 +70,6 @@ const updateJobRequirements = async (req, res) => {
   await job.save();
 
   const applications = await application.find({jobId: job._id});
-  // console.log("applications ",applications)
   for(const app of applications ) {
     if(['Applied', 'Eligible', 'Not Eligible', 'Backlog Found'].includes(app.status)) {
       const student = await User.findById(app.studentId);

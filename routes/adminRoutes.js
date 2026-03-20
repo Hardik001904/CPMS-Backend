@@ -4,16 +4,16 @@ const { authMiddleware, roleCheck } = require("../middleware/auth");
 const router = express.Router();
 
 router.get("/approvals",  authMiddleware, roleCheck(["ADMIN"]) , getPendingApprovals);
-router.patch("/approve/:id",  authMiddleware, roleCheck(["ADMIN"]) , approveUser);
-router.patch("/reject/:id",  authMiddleware, roleCheck(["ADMIN"]) , rejectUser);
 router.get("/bin",  authMiddleware, roleCheck(["ADMIN"]) , getBinUsers);
-router.patch("/restore/:id",  authMiddleware, roleCheck(["ADMIN"]) , restoreUser);
-router.delete("/delete/:id",  authMiddleware, roleCheck(["ADMIN"]) , deletePermanently);
 router.get("/stats",  authMiddleware, roleCheck(["ADMIN"]) , getSystemStats);
 router.get("/students",  authMiddleware, roleCheck(["ADMIN"]) , getAllStudents);
 router.get("/students/:id",  authMiddleware, roleCheck(["ADMIN"]) , getStudentById);
 router.get("/companies",  authMiddleware, roleCheck(["ADMIN"]) , getAllCompanies);
 router.get("/overview",  authMiddleware, roleCheck(["ADMIN"]) , getAdminDashboard);
+router.patch("/approve/:id",  authMiddleware, roleCheck(["ADMIN"]) , approveUser);
+router.patch("/reject/:id",  authMiddleware, roleCheck(["ADMIN"]) , rejectUser);
+router.patch("/restore/:id",  authMiddleware, roleCheck(["ADMIN"]) , restoreUser);
+router.delete("/delete/:id",  authMiddleware, roleCheck(["ADMIN"]) , deletePermanently);
 
 
 //Master students list 

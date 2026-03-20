@@ -5,8 +5,8 @@ const { updateStudentProfile, getStudentOverview } = require("../controllers/stu
 const { changePassword, deleteAccount } = require("../controllers/companyController");
 
 
-router.put("/profile", authMiddleware, roleCheck(["STUDENT"]), updateStudentProfile);
 router.get("/overview", authMiddleware, roleCheck(["STUDENT"]), getStudentOverview);
+router.put("/profile", authMiddleware, roleCheck(["STUDENT"]), updateStudentProfile);
 router.patch("/change-password", authMiddleware, roleCheck(["STUDENT"]), changePassword);
 router.delete("/account", authMiddleware, roleCheck(["STUDENT"]), deleteAccount);
 

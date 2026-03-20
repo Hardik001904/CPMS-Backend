@@ -6,10 +6,7 @@ const Job = require("../models/job");
 
 const updateApplicationStatus = async (req, res) => {
   try {
-    // console.log("object");
     const { status } = req.body;
-    // console.log("status");
-
     const allowedStatuses = ["Applied", "Shortlisted", "Selected", "Rejected"];
 
     if (!allowedStatuses.includes(status)) {
@@ -47,8 +44,6 @@ const applyToJob = async (req, res) => {
     }
 
     const job = await Job.findById(jobId).populate("companyId");
-    // console.log("job data", job);
-
     if (!job || job.status !== "Open") {
       return res.status(404).json({ message: "Job not found or closed" });
     }
@@ -91,7 +86,6 @@ const getStudentApplication = async (req, res) => {
     const application = await Application.find({ studentId: userId }).sort({
       appliedDate: -1,
     });
-    // console.log(application);
     return res
       .status(200)
       .json({ message: "Get application successfully", application });

@@ -53,7 +53,6 @@ const authMiddleware = async(req, res, next) => {
 
 const roleCheck = (roles) => {
   return (req, res, next) => {
-    // console.log("in side role check : ", roles);
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         message: `Permission denied. Required role: ${roles.join(" or ")}`,

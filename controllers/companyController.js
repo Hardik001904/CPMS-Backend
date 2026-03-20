@@ -6,10 +6,7 @@ const Application = require("../models/application");
 const updateMyProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    // console.log("userId", req.user.id);
-
     const { description, location, size } = req.body;
-
     const user = await User.findById(userId);
 
     if (!user) {
@@ -27,7 +24,6 @@ const updateMyProfile = async (req, res) => {
     if (location !== undefined) user.profile.location = location;
     if (size !== undefined) user.profile.size = size;
 
-    // console.log("UpdatedProflie", updateMyProfile);
     await user.save();
 
     res.status(200).json({
@@ -47,9 +43,7 @@ const updateMyProfile = async (req, res) => {
 const getCompanyById = async (req, res) => {
   try {
     const { id } = req.params;
-
     const company = await User.findById(id).select("name email profile");
-
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
     }
@@ -59,12 +53,9 @@ const getCompanyById = async (req, res) => {
   }
 };
 
-
-
 const getCompanyOverview = async (req, res) => {
   try {
     const companyId = req.user.id;
-
     const company = await User.findById(companyId);
 
     if (!company) {
@@ -104,9 +95,6 @@ const getCompanyOverview = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
-
-
-
 
 
 //Change password

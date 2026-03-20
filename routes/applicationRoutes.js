@@ -28,6 +28,5 @@ router.get(
 
 router.patch("/:id/status", authMiddleware, roleCheck(["COMPANY"]), updateApplicationStatus);
 
-// router.get("/student/:studentId", authMiddleware, roleCheck(["COMPANY"]), getStuden)
 
 module.exports = router;
