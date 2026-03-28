@@ -40,6 +40,9 @@ const UserSchema = new mongoose.Schema(
       enum: ["PENDING", "APPROVED", "REJECTED"],
       default: "PENDING",
     },
+
+    resetPasswordToken: { type: String },
+    resetPasswordExpiry: { type: Date },
     // We use a single profile object but the controller will ensure
     // only relevant fields for the specific role are populated.
     profile: {
