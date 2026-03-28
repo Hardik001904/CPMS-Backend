@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { getUser, updateMyProfile, deleteUser, getUserById, studentRegister, login, companyRegister, updateStudentProfile, getMySessions, ping } = require("../controllers/authController");
 const { authMiddleware, roleCheck } = require("../middleware/auth");
-const { forgotPassword, resetPassword } = require("../controllers/forgotpasswordcontroller");
+const { forgotPassword, resetPassword } = require("../controllers/forgotpasswordController");
 
 
 router.get("/get", getUser);
