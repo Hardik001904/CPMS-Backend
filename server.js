@@ -23,15 +23,15 @@ const port = process.env.PORT;
 // };
 // app.use(cors(corsOptions));
 
-app.use(cors({
-  origin: "*", // for dev only
-  credentials: true,
-}));
-
 // app.use(cors({
-//   origin: "https://cpms-job.vercel.app",
+//   origin: "*", // for dev only
 //   credentials: true,
 // }));
+
+app.use(cors({
+  origin: "https://cpms-job.vercel.app",
+  credentials: true,
+}));
 
 // app.use(cors());
 app.use(express.json());
