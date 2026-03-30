@@ -1,3 +1,6 @@
+const dotenv = require("dotenv");
+dotenv.config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 // const dotenv = require("dotenv");
@@ -8,10 +11,8 @@ const studentRoutes = require("./routes/studentRoutes");
 const jobRoutes = require("./routes/jobRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-const  dotenv  = require("dotenv");
 
 // dotenv.config();
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT;
@@ -23,10 +24,12 @@ const port = process.env.PORT;
 // };
 // app.use(cors(corsOptions));
 
-app.use(cors({
-  origin: "*", // for dev only
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: "*", // for dev only
+    credentials: true,
+  }),
+);
 
 // app.use(cors({
 //   origin: "https://cpms-job.vercel.app",
@@ -42,10 +45,10 @@ app.use(express.urlencoded({ extended: true }));
 // app.use("/job", jobRoutes);
 
 // API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/jobs', jobRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/jobs", jobRoutes);
 app.use("/api/company", companyRoutes);
-app.use('/api/applications', applicationRoutes);
+app.use("/api/applications", applicationRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/admin", adminRoutes);
 // app.use('/api/admin', adminRoutes);
@@ -53,7 +56,7 @@ app.use("/api/admin", adminRoutes);
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ success: false, message: 'Internal Server Error' });
+  res.status(500).json({ success: false, message: "Internal Server Error" });
 });
 
 mongoose

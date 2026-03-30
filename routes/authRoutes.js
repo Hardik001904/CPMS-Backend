@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { getUser, updateMyProfile, deleteUser, getUserById, studentRegister, login, companyRegister, updateStudentProfile, getMySessions, ping } = require("../controllers/authController");
 const { authMiddleware, roleCheck } = require("../middleware/auth");
-const { forgotPassword, resetPassword } = require("../controllers/forgotpasswordController");
+const { forgotPassword, resetPassword, verifyOtp } = require("../controllers/forgotpasswordController");
 
 
 router.get("/get", getUser);
@@ -14,6 +14,7 @@ router.post("/register/student", studentRegister);
 router.post("/register/company", companyRegister);
 router.post('/login', login);
 router.post("/forgot-password", forgotPassword);
+router.post("/verify-otp", verifyOtp);
 router.post("/reset-password/:token", resetPassword);
 
 
