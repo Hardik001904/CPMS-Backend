@@ -49,17 +49,17 @@ const forgotPassword = async (req, res) => {
     //     },
     // });
     const transporter = nodemailer.createTransport({
-      // service: "gmail",
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false, // true for 465, false for 587
+      service: "gmail",
+      // host: "smtp.gmail.com",
+      // port: 587,
+      // secure: false, // true for 465, false for 587
       auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
       },
-      tls: {
-        rejectUnauthorized: false, // ← fixes the self-signed certificate error
-      },
+      // tls: {
+      //   rejectUnauthorized: false, // ← fixes the self-signed certificate error
+      // },
     });
     // console.log("transporter :", transporter)
 
