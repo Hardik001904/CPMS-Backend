@@ -3,7 +3,6 @@ const CollegeStudent = require("./models/collegeStudent");
 
 mongoose
   // .connect("mongodb://127.0.0.1:27017/cpms")
-  // .connect("mongodb+srv://hipravin19_db_user:jxqcJsrv3HaNLqlL@cluster0.qutys6g.mongodb.net/cpms")
   .then(async () => {
     console.log("MongoDB connected");
 
