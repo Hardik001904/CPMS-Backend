@@ -1,7 +1,12 @@
 const application = require("../models/application");
-const job = require("../models/job");
 const Job = require("../models/job");
+const User = require("../models/user");
 const { checkEligibility } = require("./applicationController");
+
+// ── NEW: Notification imports ──────────────────────────────────────────────
+const { NotificationService } = require("../services/notificationService");
+const { emitToMany } = require("../socket/socketManager");
+// ───────────────────────────────────────────────────────────────────────────
 
 //Public: Get all active openings
 const getAllJobs = async (req, res) => {
@@ -39,6 +44,44 @@ const postJob = async (req, res) => {
       status: "Open",
     });
     await newJob.save();
+    // ── NEW: Notify eligible students about new job ───────────────────────
+    try {
+      // Find all approved students
+      const students = await User.find({
+        role: "STUDENT",
+        status: "APPROVED",
+      }).select("_id profile");
+
+      // Filter eligible students using existing checkEligibility helper
+      const eligibleStudentIds = students
+        .filter((s) => {
+          const eligibility = checkEligibility(s, newJob);
+          return eligibility === "Eligible";
+        })
+        .map((s) => s._id);
+
+      if (eligibleStudentIds.length) {
+        const notifications = await NotificationService.jobPosted({
+          job: newJob,
+          studentIds: eligibleStudentIds,
+        });
+
+        // Push real-time notification to each eligible student
+        const notifMap = {};
+        notifications.forEach((n) => {
+          notifMap[n.recipientId.toString()] = n;
+        });
+
+        eligibleStudentIds.forEach((id) => {
+          const notif = notifMap[id.toString()];
+          if (notif) emitToMany([id.toString()], notif);
+        });
+      }
+    } catch (notifError) {
+      console.error("Notification error (non-critical):", notifError);
+    }
+    // ────────────────────────────────────────────────────────────────────
+
     res.status(201).json(newJob);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -58,7 +101,8 @@ const updateJobStatus = async (req, res) => {
 
     job.status = job.status === "Open" ? "Closed" : "Open";
     await job.save();
-    res.json(job);
+
+    res.json({ message: `Job is now ${job.status}`, job });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -69,15 +113,25 @@ const updateJobRequirements = async (req, res) => {
   Object.assign(job, req.body);
   await job.save();
 
-  const applications = await application.find({jobId: job._id});
-  for(const app of applications ) {
-    if(['Applied', 'Eligible', 'Not Eligible', 'Backlog Found'].includes(app.status)) {
+  const applications = await application.find({ jobId: job._id });
+  for (const app of applications) {
+    if (
+      ["Applied", "Eligible", "Not Eligible", "Backlog Found"].includes(
+        app.status,
+      )
+    ) {
       const student = await User.findById(app.studentId);
       app.status = checkEligibility(student, job);
       await app.save();
     }
   }
-  res.json({message: 'Requirements updated and applications re-checked'});
-}
+  res.json({ message: "Requirements updated and applications re-checked" });
+};
 
-module.exports = { postJob, getAllJobs, getMyJobs, updateJobStatus, updateJobRequirements };
+module.exports = {
+  postJob,
+  getAllJobs,
+  getMyJobs,
+  updateJobStatus,
+  updateJobRequirements,
+};

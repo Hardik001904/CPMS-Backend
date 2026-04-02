@@ -1,9 +1,11 @@
-const application = require("../models/application");
 const Application = require("../models/application");
 const Job = require("../models/job");
+// ── NEW: Notification imports ──────────────────────────────────────────────
+const { NotificationService } = require("../services/notificationService");
+const { emitToUser, emitToMany } = require("../socket/socketManager");
+// ───────────────────────────────────────────────────────────────────────────
 
 //Company: Update status (Shortlist/Reject/Select)
-
 const updateApplicationStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -14,7 +16,6 @@ const updateApplicationStatus = async (req, res) => {
     }
 
     const app = await Application.findById(req.params.id);
-
     if (!app) return res.status(404).json({ message: "Application not found" });
 
     // Ensure the company owns this application
@@ -24,6 +25,54 @@ const updateApplicationStatus = async (req, res) => {
 
     app.status = status;
     await app.save();
+
+    // ── NEW: Fire notifications ──────────────────────────────────────────
+    // try {
+    //   const studentNotif = await NotificationService.applicationStatusChanged({
+    //     application: app,
+    //     newStatus: status,
+    //   });
+    //   if (studentNotif) emitToUser(app.studentId.toString(), studentNotif);
+
+    //   if (status === "Selected") {
+    //     const adminNotifs = await NotificationService.studentSelected({
+    //       application: app,
+    //     });
+    //     adminNotifs.forEach((n) => emitToUser(n.recipientId.toString(), n));
+    //   }
+    // } catch (err) {
+    //   console.error("Notification error:", err);
+    // }
+    // In updateApplicationStatus, replace your try block with:
+    try {
+      console.log(
+        "[Notif] Firing for studentId:",
+        app.studentId.toString(),
+        "status:",
+        status,
+      );
+
+      const studentNotif = await NotificationService.applicationStatusChanged({
+        application: app,
+        newStatus: status,
+      });
+
+      console.log(
+        "[Notif] DB record created:",
+        !!studentNotif,
+        studentNotif?._id,
+      );
+
+      if (studentNotif) {
+        emitToUser(app.studentId.toString(), studentNotif);
+        console.log(
+          "[Notif] emitToUser called for room: user:" +
+            app.studentId.toString(),
+        );
+      }
+    } catch (err) {
+      console.error("[Notif] ERROR:", err.message, err.stack);
+    }
 
     res.status(200).json({
       message: "Application status updated successfully",
@@ -68,6 +117,16 @@ const applyToJob = async (req, res) => {
       companyName: job.companyName,
       status: "Applied",
     });
+
+    try {
+      const companyNotif = await NotificationService.studentApplied({
+        application,
+      });
+      if (companyNotif)
+        emitToUser(application.companyId.toString(), companyNotif);
+    } catch (err) {
+      console.error("Notification error:", err);
+    }
 
     return res.status(201).json({
       message: "Application submitted successfully",

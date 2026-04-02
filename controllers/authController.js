@@ -4,6 +4,7 @@ const CollegeStudent = require("../models/collegeStudent.js"); // Import the mas
 
 const bcrypt = require("bcrypt");
 const useragent = require("useragent");
+const { NotificationService } = require("../services/notificationService.js");
 // Define your college configuration
 const COLLEGE_CONFIG = {
   emailDomain: "university.edu", // Only allow @university.edu
@@ -79,6 +80,7 @@ const studentRegister = async (req, res) => {
     });
 
     await newUser.save();
+
     res.status(201).json({
       success: true,
       message: "Institutional identity verified. Registration complete.",
@@ -118,6 +120,18 @@ const companyRegister = async (req, res) => {
     });
 
     await newUser.save();
+
+    if (newUser.role === "COMPANY") {
+      try {
+        const adminNotifs = await NotificationService.companyRegistered({
+          company: newUser,
+        });
+        adminNotifs.forEach((n) => emitToRole("ADMIN", n));
+      } catch (err) {
+        console.error("Notification error:", err);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message:
@@ -217,7 +231,6 @@ const login = async (req, res) => {
       ip: req.ip,
       lastActive: new Date(),
     };
-   
 
     // Replace old sessions (single login)
     user.sessions = [deviceInfo];
@@ -239,8 +252,8 @@ const login = async (req, res) => {
 };
 
 // Active Sessions:
-// - Chrome on Windows (Ahmedabad) 
-// - Mobile Chrome (Android) 
+// - Chrome on Windows (Ahmedabad)
+// - Mobile Chrome (Android)
 const getMySessions = async (req, res) => {
   const user = await User.findById(req.user.id);
   res.json(
@@ -332,7 +345,7 @@ const getUserById = async (req, res) => {
 const updateMyProfile = async (req, res) => {
   try {
     const userId = req.params.id;
-    
+
     // Only allowed fields
     const allowedUpdates = ["name", "password", "profile"];
     const updates = {};
