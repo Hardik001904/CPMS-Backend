@@ -29,11 +29,7 @@ function initSocket(httpServer) {
     //   credentials: true,
     // },
     cors: {
-      origin: [
-        "http://localhost:5173",
-        "http://192.168.1.21:5173", // your LAN IP
-        process.env.FRONTEND_URL, // already in your .env
-      ].filter(Boolean),
+      origin: process.env.FRONTEND_URL,
       methods: ["GET", "POST"],
       credentials: true,
     },

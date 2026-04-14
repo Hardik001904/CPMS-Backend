@@ -70,6 +70,14 @@ const updateApplicationStatus = async (req, res) => {
             app.studentId.toString(),
         );
       }
+
+      if (status === "Selected") {
+        const adminNotifs = await NotificationService.studentSelected({
+          application: app,
+        });
+        console.log("adminNotifs : ", adminNotifs);
+        adminNotifs.forEach((n) => emitToUser(n.recipientId.toString(), n));
+      }
     } catch (err) {
       console.error("[Notif] ERROR:", err.message, err.stack);
     }
@@ -180,7 +188,7 @@ const checkEligibility = (student, job) => {
   //Branch check
   if (
     job.allowedBranches?.length > 0 &&
-    !job.allowedBranches.includes(student.profile?.branch)
+    !job.allowedBranches.includes(student.profile?.department)
   ) {
     return "Not Eligible";
   }

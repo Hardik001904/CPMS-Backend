@@ -1,10 +1,11 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const CollegeStudent = require("../models/collegeStudent.js"); // Import the master list
-
 const bcrypt = require("bcrypt");
 const useragent = require("useragent");
 const { NotificationService } = require("../services/notificationService.js");
+const { emitToUser, emitToRole } = require("../socket/socketManager");
+
 // Define your college configuration
 const COLLEGE_CONFIG = {
   emailDomain: "university.edu", // Only allow @university.edu
@@ -70,7 +71,6 @@ const studentRegister = async (req, res) => {
       email,
       password: hashedPassword,
       role: "STUDENT",
-      // isApproved: COLLEGE_CONFIG.autoApproveStudents,
       status: "APPROVED",
       profile: {
         department,
@@ -118,6 +118,7 @@ const companyRegister = async (req, res) => {
         website,
       },
     });
+    console.log("Company data registrare : ", newUser);
 
     await newUser.save();
 
@@ -141,13 +142,21 @@ const companyRegister = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 /**
  * @route   POST /api/auth/login
+ *
+ * Netflix-style single session logic:
+ *
+ * CASE A — No existing session → login normally.
+ * CASE B — Existing session found AND request includes confirmTakeover: true
+ *           → kick old session via socket, then login.
+ * CASE C — Existing session found, no confirmTakeover flag
+ *           → return 409 with existing device info so frontend can show
+ *             "Someone is already logged in on Chrome / Windows. Continue?"
  */
 const login = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, confirmTakeover } = req.body;
 
     // 1 Required fields check
     if (!email || !password || !role) {
@@ -166,7 +175,6 @@ const login = async (req, res) => {
 
     // 3 Find user by email
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(400).json({
         message: "Invalid credentials.",
@@ -199,12 +207,42 @@ const login = async (req, res) => {
 
     // 6 Check password
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) {
       return res.status(400).json({
         message: "Incorrect password.",
       });
     }
+
+    // ── SESSION CONFLICT CHECK (Netflix logic) ────────────────────────────────
+    const INACTIVE_LIMIT_MS = 15 * 60 * 1000;
+    const now = new Date();
+    user.sessions = user.sessions.filter(
+      (s) => now - new Date(s.lastActive) < INACTIVE_LIMIT_MS, // 15 min
+    );
+    const existingSession = user.sessions.length > 0 ? user.sessions[0] : null;
+
+    if (existingSession && !confirmTakeover) {
+      // Tell the frontend someone is already logged in — let it ask the user
+      return res.status(409).json({
+        message: "SESSION_CONFLICT",
+        existingSession: {
+          device: existingSession.device,
+          browser: existingSession.browser,
+          ip: existingSession.ip,
+          lastActive: existingSession.lastActive,
+        },
+      });
+    }
+
+    // If confirmTakeover === true, kick the existing session via socket first
+    if (existingSession && confirmTakeover) {
+      emitToUser(user._id.toString(), {
+        type: "SESSION_KICKED",
+        message:
+          "Your session was ended because someone logged in from another device.",
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // 7 Generate token
     const token = jwt.sign(
@@ -216,10 +254,6 @@ const login = async (req, res) => {
       process.env.JWT_SECRET || "PLACEMENT_PRO_SECRET_KEY",
       { expiresIn: "24h" },
     );
-
-    // 8 Remove password before sending
-    const userData = user.toObject();
-    delete userData.password;
 
     //  Device detection
     const agent = useragent.parse(req.headers["user-agent"]);
@@ -234,8 +268,11 @@ const login = async (req, res) => {
 
     // Replace old sessions (single login)
     user.sessions = [deviceInfo];
-
     await user.save();
+
+    // 8 Remove password before sending
+    const userData = user.toObject();
+    delete userData.password;
 
     return res.status(200).json({
       message: "Login successful",
@@ -267,27 +304,55 @@ const getMySessions = async (req, res) => {
 };
 
 // API: Logout Specific Session
-const logoutSingleSession = async (req, res) => {
+// const logoutSingleSession = async (req, res) => {
+//   try {
+//     const { userId, token } = req.body;
+//     const user = await User.findById(userId);
+//     user.sessions = user.sessions.filter((s) => s.token !== token);
+//     await user.save();
+//     res.json({
+//       message: "Session removed",
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+/**
+ * @route   POST /api/auth/logout
+ * Logout the currently authenticated user's session.
+ */
+const logout = async (req, res) => {
   try {
-    const { userId, token } = req.body;
-    const user = await User.findById(userId);
+    const token = req.headers.authorization?.split(" ")[1];
+    const user = await User.findById(req.user.id);
+    console.log("logout user before : ", user);
     user.sessions = user.sessions.filter((s) => s.token !== token);
+    console.log("logout user after : ", user);
     await user.save();
-    res.json({
-      message: "Session removed",
-    });
+    res.json({ message: "Logged out successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// API: Logout User Completely
+/**
+ * @route   DELETE /api/auth/admin/force-logout/:userId   (Admin only)
+ * Force logout a user from all devices.
+ */
 const forceLogoutUser = async (req, res) => {
   try {
     const { userId } = req.params;
     await User.findByIdAndUpdate(userId, {
       sessions: [],
     });
+
+    // Notify the kicked user in real time
+    emitToUser(userId, {
+      type: "SESSION_KICKED",
+      message: "You have been logged out by an administrator.",
+    });
+
     res.json({
       message: "User logged out from all devices",
     });
@@ -296,23 +361,35 @@ const forceLogoutUser = async (req, res) => {
   }
 };
 
+/**
+ * @route   GET /api/auth/ping
+ *
+ * Called by the frontend every ~4 minutes while the user is active.
+ * The authMiddleware already updates lastActive on EVERY request,
+ * so this endpoint only needs to exist as a lightweight target.
+ * Do NOT duplicate the lastActive update here.
+ */
 const ping = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    const token = req.headers.authorization.split(" ")[1];
-    const session = user.sessions.find((s) => s.token === token);
-    if (!session) {
-      return res.status(401).json({ message: "Session not found" });
-    }
-
-    //  update last active time
-    session.lastActive = new Date();
-    await user.save();
-    res.json({ message: "Session active" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  // authMiddleware already updated lastActive — just confirm the session is alive.
+  res.json({ message: "Session active" });
 };
+// const ping = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.user.id);
+//     const token = req.headers.authorization.split(" ")[1];
+//     const session = user.sessions.find((s) => s.token === token);
+//     if (!session) {
+//       return res.status(401).json({ message: "Session not found" });
+//     }
+
+//     //  update last active time
+//     session.lastActive = new Date();
+//     await user.save();
+//     res.json({ message: "Session active" });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 const getUser = async (req, res) => {
   try {
@@ -406,12 +483,12 @@ module.exports = {
   studentRegister,
   companyRegister,
   login,
+  logout,
   getUser,
   updateMyProfile,
   deleteUser,
   getUserById,
   getMySessions,
   forceLogoutUser,
-  logoutSingleSession,
   ping,
 };

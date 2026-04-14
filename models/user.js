@@ -69,7 +69,7 @@ const UserSchema = new mongoose.Schema(
       website: String,
 
       description: String,
-      location: String,
+      headquarters: String,
       size: String,
     },
   },

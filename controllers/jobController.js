@@ -32,17 +32,44 @@ const getMyJobs = async (req, res) => {
 
 const postJob = async (req, res) => {
   try {
-    const { title, location, salary, description, criteria } = req.body;
-    const newJob = new Job({
+    const {
       title,
       location,
       salary,
-      description,
+      jobDescription,
+      criteria,
+      requiredSkills,
+      minCgpa,
+      allowedBranches,
+      industry,
+      headquarters,
+      hrName,
+      website,
+      jobType,
+      deadline,
+      numberOfPositions,
+    } = req.body;
+    const newJob = new Job({
+      title,
+      location,
+      jobDescription,
+      requiredSkills,
+      minCgpa,
+      allowedBranches,
+      industry,
+      headquarters,
+      hrName,
+      website,
+      salary,
+      jobType,
+      deadline,
+      numberOfPositions,
       criteria,
       companyId: req.user.id,
       companyName: req.user.name,
       status: "Open",
     });
+    console.log("my job : ", req.body);
     await newJob.save();
     // ── NEW: Notify eligible students about new job ───────────────────────
     try {
@@ -53,19 +80,22 @@ const postJob = async (req, res) => {
       }).select("_id profile");
 
       // Filter eligible students using existing checkEligibility helper
+      console.log("students :",students)
+      console.log("newJob :",newJob)
       const eligibleStudentIds = students
         .filter((s) => {
           const eligibility = checkEligibility(s, newJob);
           return eligibility === "Eligible";
         })
         .map((s) => s._id);
+      console.log("eligibleStudentIds : ",eligibleStudentIds.length);
 
       if (eligibleStudentIds.length) {
         const notifications = await NotificationService.jobPosted({
           job: newJob,
           studentIds: eligibleStudentIds,
         });
-
+        console.log("you last die");
         // Push real-time notification to each eligible student
         const notifMap = {};
         notifications.forEach((n) => {
@@ -76,7 +106,9 @@ const postJob = async (req, res) => {
           const notif = notifMap[id.toString()];
           if (notif) emitToMany([id.toString()], notif);
         });
+        console.log("eligibleStudentIds :::::::::::::::fg ");
       }
+      // console.log("eligibleStudentIds : ",notif)
     } catch (notifError) {
       console.error("Notification error (non-critical):", notifError);
     }
@@ -98,8 +130,11 @@ const updateJobStatus = async (req, res) => {
     if (job.companyId.toString() !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized" });
     }
-
-    job.status = job.status === "Open" ? "Closed" : "Open";
+    console.log("Current Status:", job.status);
+    // job.status = job.status === "Open" ? "Closed" : "Open";
+    const updatedStatus = job.status === "Open" ? "Closed" : "Open";
+    job.status = updatedStatus;
+    console.log("New Status:", updatedStatus);
     await job.save();
 
     res.json({ message: `Job is now ${job.status}`, job });
@@ -109,7 +144,7 @@ const updateJobStatus = async (req, res) => {
 };
 
 const updateJobRequirements = async (req, res) => {
-  const job = await job.findById(req.params.id);
+  const job = await Job.findById(req.params.id);
   Object.assign(job, req.body);
   await job.save();
 
@@ -128,10 +163,30 @@ const updateJobRequirements = async (req, res) => {
   res.json({ message: "Requirements updated and applications re-checked" });
 };
 
+const getJobById = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id).populate({
+      path: "companyId",
+      select: "profile.hrName profile.industry",
+    });
+    // console.log("job data : ", job);
+    const response = {
+      ...job._doc,
+      hrName: job.companyId?.profile?.hrName,
+      industry: job.companyId?.profile?.industry,
+    };
+
+    res.json(response);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   postJob,
   getAllJobs,
   getMyJobs,
   updateJobStatus,
   updateJobRequirements,
+  getJobById,
 };

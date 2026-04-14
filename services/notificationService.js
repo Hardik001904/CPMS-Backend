@@ -37,6 +37,7 @@ class NotificationService {
    */
   static async jobPosted({ job, studentIds }) {
     if (!studentIds || !studentIds.length) return [];
+    console.log("job posted")
 
     const docs = studentIds.map((studentId) => ({
       recipientId: studentId,

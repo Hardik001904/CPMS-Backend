@@ -15,4 +15,4 @@ router.put("/update-profile", authMiddleware, updateMyProfile);
 router.patch("/change-password", authMiddleware, changePassword);
 router.delete("/account", authMiddleware, deleteAccount);
 
-module.exports = router;
+module.exports = router; 
