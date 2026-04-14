@@ -43,9 +43,9 @@ const getSummaryStats = async (req, res) => {
     res.json({ totalStudents, totalCompanies, totalJobs, placedStudents,  placementPercentage, });
 
      // Save to cache
-    cachedStats = statsData;
-    lastFetchTime = currentTime;
-     res.json(statsData);
+    // cachedStats = statsData;
+    // lastFetchTime = currentTime;
+    //  res.json(statsData);
   } catch (error) {
     console.error("Stats Error:", error);
     res.status(500).json({ message: "Error fetching stats" });
