@@ -326,9 +326,7 @@ const logout = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     const user = await User.findById(req.user.id);
-    console.log("logout user before : ", user);
     user.sessions = user.sessions.filter((s) => s.token !== token);
-    console.log("logout user after : ", user);
     await user.save();
     res.json({ message: "Logged out successfully" });
   } catch (error) {

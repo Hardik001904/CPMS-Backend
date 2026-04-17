@@ -17,7 +17,7 @@ const JobSchema = new mongoose.Schema(
     },
     deadline: {type : Date },
     numberOfPositions: { type: Number, default: 1},
-    backlogAllowed: { type: Boolean, default: true },
+    backlogAllowed: { type: Boolean, default: false },
 
     postedDate: { type: Date, default: Date.now },
     

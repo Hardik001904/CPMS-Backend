@@ -186,9 +186,17 @@ const checkEligibility = (student, job) => {
     return "Backlog Found";
 
   //Branch check
+  // if (
+  //   job.allowedBranches?.length > 0 &&
+  //   !job.allowedBranches.includes(student.profile?.department)
+  // ) {
+  //   return "Not Eligible";
+  // }
   if (
     job.allowedBranches?.length > 0 &&
-    !job.allowedBranches.includes(student.profile?.department)
+    !job.allowedBranches
+      .map((b) => b.toLowerCase().trim())
+      .includes(student.profile?.department?.toLowerCase().trim())
   ) {
     return "Not Eligible";
   }

@@ -7,13 +7,13 @@ const CollageStudent = require("../models/collegeStudent");
 //Get users awaiting verification
 const getPendingApprovals = async (req, res) => {
   try {
-    const pending = await User.find({ status: "PENDING" }).select("-password");
+    const pending = await User.find({ status: "PENDING" }).select("-password").sort({ createdAt: -1 });;
     res.json(pending);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-
+  
 //Approve user access
 const approveUser = async (req, res) => {
   try {

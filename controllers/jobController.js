@@ -11,12 +11,61 @@ const { emitToMany } = require("../socket/socketManager");
 //Public: Get all active openings
 const getAllJobs = async (req, res) => {
   try {
-    const jobs = await Job.find({ status: "Open" }).sort({ postedDate: -1 });
-    res.json(jobs);
+    const userId = req.user.id;
+
+    const student = await User.findById(userId);
+
+    const studentDepartment = student.profile?.department
+      ?.toLowerCase()
+      .trim();
+
+    const jobs = await Job.find({ status: "Open" }).sort({
+      postedDate: -1,
+    });
+
+    const eligibleJobs = jobs.filter((job) => {
+      // If no branch restriction -> allow all students
+      if (!job.allowedBranches || job.allowedBranches.length === 0) {
+        return true;
+      }
+
+      return job.allowedBranches
+        .map((branch) => branch.toLowerCase().trim())
+        .includes(studentDepartment);
+    });
+
+    res.json(eligibleJobs);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+// const getAllJobs = async (req, res) => {
+//   try {
+//     const userId = req.user.id;
+//     const jobs = await Job.find({ status: "Open" }).sort({ postedDate: -1 });
+//     const student = await User.findById(userId);
+//     console.log("student :",student)
+
+//     // if (
+//       // const check = !jobs.allowedBranches.includes(student.profile?.department)
+//       // console.log("CHeck : ",check)
+//     // ) {
+//     //   console.log("")      
+//     // }
+//     // if (
+    
+//     const checkData =  jobs.allowedBranches?.length > 0 &&
+//       !jobs.allowedBranches
+//         .map((b) => b.toLowerCase().trim())
+//         .includes(student.profile?.department?.toLowerCase().trim())
+//     // ) {
+//       console.log("Not Eligible :",checkData);
+//     // }
+//     res.json(jobs);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 //Company: Get only jobs posted by this comFany
 const getMyJobs = async (req, res) => {
@@ -48,6 +97,7 @@ const postJob = async (req, res) => {
       jobType,
       deadline,
       numberOfPositions,
+      backlogAllowed,
     } = req.body;
     const newJob = new Job({
       title,
@@ -64,6 +114,7 @@ const postJob = async (req, res) => {
       jobType,
       deadline,
       numberOfPositions,
+      backlogAllowed,
       criteria,
       companyId: req.user.id,
       companyName: req.user.name,
@@ -80,15 +131,16 @@ const postJob = async (req, res) => {
       }).select("_id profile");
 
       // Filter eligible students using existing checkEligibility helper
-      console.log("students :",students)
-      console.log("newJob :",newJob)
+      console.log("students :", students);
+      console.log("newJob :", newJob);
       const eligibleStudentIds = students
         .filter((s) => {
           const eligibility = checkEligibility(s, newJob);
+          console.log("eligibility : ", eligibility);
           return eligibility === "Eligible";
         })
         .map((s) => s._id);
-      console.log("eligibleStudentIds : ",eligibleStudentIds.length);
+      console.log("eligibleStudentIds : ", eligibleStudentIds.length);
 
       if (eligibleStudentIds.length) {
         const notifications = await NotificationService.jobPosted({
@@ -167,13 +219,14 @@ const getJobById = async (req, res) => {
   try {
     const job = await Job.findById(req.params.id).populate({
       path: "companyId",
-      select: "profile.hrName profile.industry",
+      select: "profile.hrName profile.industry profile.website",
     });
     // console.log("job data : ", job);
     const response = {
       ...job._doc,
       hrName: job.companyId?.profile?.hrName,
       industry: job.companyId?.profile?.industry,
+      website: job.companyId?.profile?.website,
     };
 
     res.json(response);

@@ -12,6 +12,4 @@ router.patch("/:id/status", authMiddleware, roleCheck(["COMPANY"]), updateJobSta
 router.patch("/:id/requirements", authMiddleware, roleCheck(["COMPANY"]), updateJobRequirements);
 
 
-
-
 module.exports = router;
