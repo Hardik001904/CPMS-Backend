@@ -6,7 +6,7 @@ const Application = require("../models/application");
 const updateMyProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { description, location, size } = req.body;
+    const { description, headquarters, size } = req.body;
     const user = await User.findById(userId);
 
     if (!user) {
@@ -21,7 +21,7 @@ const updateMyProfile = async (req, res) => {
 
     //Update only these 3 fields
     if (description !== undefined) user.profile.description = description;
-    if (location !== undefined) user.profile.location = location;
+    if (headquarters !== undefined) user.profile.headquarters = headquarters;
     if (size !== undefined) user.profile.size = size;
 
     await user.save();
@@ -31,7 +31,7 @@ const updateMyProfile = async (req, res) => {
       message: "Profile updated successfully",
       updatedFields: {
         description: user.profile.description,
-        location: user.profile.location,
+        headquarters: user.profile.headquarters,
         size: user.profile.size,
       },
     });
